@@ -1,47 +1,27 @@
 #!/bin/sh
 
-echo "WORK IN PROGRESS; NOT READY"
-exit 1
-
-# FIXME: USER FORGOT TO USE srun (detect and report error?):
-# [40000] NOTE at socketconnlist.cpp:218 in scanForPreExisting; REASON='found pre-existing socket... will not be restored'
-# fd = 3
-# device = socket:[1350385918]
-# [Sat Apr 10 09:03:13 2021] [unknown] Fatal error in MPI_Init: Other MPI error, error stack:
-# MPIR_Init_thread(537):
-# MPID_Init(246).......: channel initialization failed
-# MPID_Init(647).......:  PMI2 init failed: 1
-# bin/mana_launch: line 48: 15391 Aborted
-# $dir/dmtcp_launch $options -h $host --no-gzip --join --disable-dl-plugin --with-plugin $PWD/lib/dmtcp/libmana.so "$target"
-
-# FIXME: USER FORGOT TO USE srun and there is no salloc (detect and report error?):
-# + bin/dmtcp_launch 10 -i -h cori03 --no-gzip --join --disable-dl-plugin --with-plugin /global/homes/g/gdc0/mana-rohgarg-orig/lib/dmtcp/libmana.so contrib/mpi-proxy-split/test/ping_pong.mana.exe
-# *** ERROR:Executable to run w/ DMTCP appears not to be readable,
-# ***or no such executable in path.
-
 # FIXME: USER FORGOT TO DO 'salloc' (detect and report error?):
 # gdc0@cori11:~/mana-rohgarg-orig> srun -N 2 bin/mana_launch --verbose contrib/mpi-proxy-split/test/ping_pong.mana.exe
 # srun: error: No architecture specified, cannot estimate job costs.
 # srun: error: Unable to allocate resources: Unspecified error
 
 
-if [ "x$1" == x ]; then
-  echo "USAGE:  $0 [--verbose] [DMTCP_OPTIONS ...] MANA_EXECUTABLE"
-  echo "  NOTE: MANA_EXECUTABLE must be compiled with libmpidummy.so"
+if [ "x$SLURM_JOB_ID" == x ]; then
+  echo "USAGE:  $0 [--verbose] [DMTCP_OPTIONS ...]"
+  echo "        For DMTCP options, do: $0 --verbose --help"
   exit 1
 fi
 
 dir=`dirname $0`
 host=`hostname`
-submissionHost=`grep Host: $HOME/.mana | sed -e 's%Host: %%' | sed -e 's% .*$%%'`
-echo $submissionHost
+submissionHost=`grep Host: $HOME/.mana | sed -e 's%Host: %%'|sed -e 's% .*$%%'`
 
 coordinator_found=0
 $dir/dmtcp_command -s -h $submissionHost 1>/dev/null && coordinator_found=1
 if [ "$coordinator_found" == 0 ]; then
   echo "*** Checking for coordinator:"
   set -x
-    # `dirname $0`/dmtcp_command -s -h `hostname` 
+    # `dirname $0`/dmtcp_command -s -h `hostname`
     $dir/dmtcp_command --status --coord-host $submissionHost
   set +x
   echo "  No coordinator detected.   Try:"
@@ -51,7 +31,7 @@ fi
 
 options=""
 verbose=0
-while [ "x$2" != x ]; do
+while [ "x$1" != x ]; do
   if [ "$1" == --verbose ]; then
     verbose=1
   else
@@ -60,19 +40,12 @@ while [ "x$2" != x ]; do
   shift
 done
 
-if [ "$verbose" == 0 ]; then
-  options="$1 -q -q"
-fi
-
-target="$1"
-
 if [ "$verbose" == 1 ]; then
   set -x
 fi
 
-$dir/dmtcp_launch  $options -h $submissionHost --no-gzip -q -q --join \
-	  --disable-dl-plugin --with-plugin $PWD/lib/dmtcp/libmana.so "$target"
-
-# srun -n1 -c1 --cpu-bind=cores bin/dmtcp_launch  -i10 -h `hostname` --no-gzip --join --disable-dl-plugin --with-plugin $PWD/lib/dmtcp/libmana.so contrib/mpi-proxy-split/test/mpi_hello_world.mana.exe
-
-# srun -n1 -c1 --cpu-bind=cores bin/mana_launch  -i10 contrib/mpi-proxy-split/test/mpi_hello_world.mana.exe
+if [ x"$options" == x ]; then
+  $dir/dmtcp_command -h $submissionHost --list
+else
+  $dir/dmtcp_command $options
+fi
