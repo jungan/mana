@@ -5,5 +5,7 @@ gzip FILE.1
 ./latex2man -t -L ./macros.trans FILE.latex2man tmp.tex
 cat header.tex tmp.tex footer.tex > FILE.tex
 
+./latex2man -H -t ./macros.trans mana.latex2man mana.html
+
 See latex2man for other options.
   http://ctan.math.washington.edu/tex-archive/support/latex2man/latex2man.html
