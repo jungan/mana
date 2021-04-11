@@ -71,7 +71,7 @@ endif
 
 all: default
 
-mana: default bin/mana_launch bin/mana_launch bin/mana_restart
+mana: default bin/mana_launch bin/mana_status bin/mana_restart
 	cd contrib/mpi-proxy-split && make install && make -j tests
 ${targetdir}/bin/mana_launch: src/mana_launch
 	cp src/mana_launch ${targetdir}/bin/
