@@ -71,6 +71,17 @@ fi
 target="$1"
 plugindir="`dirname $0`/.."
 
+# # FIXME: Can we detect if we're running MPI, and then issue a warning
+# #   if we don't detect that srun/sbatch was called?
+# # Of course, a user can run a single-rank MPI job without srun/salloc.
+# # So, this needs to be a warning, and not an error.
+# if ldd "$target" | grep -q libmpidummy.so; then
+# fi
+
+# FIXME: Should we detect if the MANA job was not linked with libmpidummy.so
+#        and point the user toward dmtcp_launch/dmtcp_restart?
+#        Since mana_launch includes the MANA plugin, it's not for non-MPI jobs.
+
 if [ "$verbose" == 1 ]; then
   set -x
 fi
