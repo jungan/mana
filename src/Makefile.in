@@ -1286,6 +1286,11 @@ uninstall-am: uninstall-binPROGRAMS uninstall-dmtcplibPROGRAMS \
 ${manaplugindir}/mana_coordinator.o: ${manaplugindir}/mana_coordinator.cpp
 	cd ${manaplugindir} && ${MAKE} mana_coordinator.o
 	cp ${manaplugindir}/mana_coordinator.o ./
+${d_bindir}/mana_start_coordinator: ${srcdir}/mana_start_coordinator
+	cp ${d_bindir}/mana_start_coordinator ${srcdir}/mana_start_coordinator
+	cp ${d_bindir}/mana_start_coordinator ${srcdir}/mana_coordinator
+${d_bindir}/mana_status: ${srcdir}/mana_status
+	cp ${d_bindir}/mana_status ${srcdir}/mana_status
 ${d_bindir}/mana_launch: ${srcdir}/mana_launch
 	cp ${d_bindir}/mana_launch ${srcdir}/mana_launch
 ${d_bindir}/mana_restart: ${srcdir}/mana_restart
