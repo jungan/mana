@@ -153,6 +153,11 @@ static const char *theUsage =
   "              Directory to store temp files (default: $TMDPIR or /tmp)\n"
   "              (Behavior is undefined if two launched processes specify\n"
   "               different tmpdirs.)\n"
+  "  --delay-initialization (environment variable "
+                                               "DMTCP_DELAY_INITIALIZATION):\n"
+  "      DMTCP initializes self in constructor only after other constructors\n"
+  "      (DANGEROUS:  If file descriptors are created in other constructors,\n"
+  "                   DMTCP will be unaware of those file descriptors.)\n"
   "  -q, --quiet (or set environment variable DMTCP_QUIET = 0, 1, or 2)\n"
   "              Skip NOTE messages; if given twice, also skip WARNINGs\n"
   "  --coord-logfile PATH (environment variable DMTCP_COORD_LOG_FILENAME\n"
@@ -296,6 +301,9 @@ processArgs(int *orig_argc,
     } else if (s == "-i" || s == "--interval") {
       setenv(ENV_VAR_CKPT_INTR, argv[1], 1);
       shift; shift;
+    } else if (s == "--delay-initialization") {
+      setenv(ENV_VAR_DELAY_INITIALIZATION, "1", 1);
+      shift;
     } else if (s == "--coord-logfile") {
       setenv(ENV_VAR_COORD_LOGFILE, argv[1], 1);
       shift; shift;

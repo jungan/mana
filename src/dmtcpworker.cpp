@@ -41,6 +41,8 @@
 
 using namespace dmtcp;
 
+static bool delay_initialization = true;
+
 LIB_PRIVATE void pthread_atfork_prepare();
 LIB_PRIVATE void pthread_atfork_parent();
 LIB_PRIVATE void pthread_atfork_child();
@@ -277,6 +279,16 @@ dmtcp_initialize()
 {
   static bool initialized = false;
 
+  // DmtcpWorker::DmtcpWorker() constructor sets delay_initialization to false.
+  // So, when the constructor is executed, we can stop delaying.
+  if (delay_initialization && getenv(ENV_VAR_DELAY_INITIALIZATION) == NULL) {
+    // DMTCP_DELAY_INITIALIZATION was not set; don't delay initializing DMTCP
+    delay_initialization = false;
+  }
+  if (delay_initialization) {
+    return;
+  }
+
   if (initialized) {
     if (buf == NULL) {
       // Technically, this is a memory leak, but buf is static and so it happens
@@ -361,6 +373,9 @@ dmtcp_initialize()
 // workerhijack.cpp initializes a static variable theInstance to DmtcpWorker obj
 DmtcpWorker::DmtcpWorker()
 {
+  // Even if DMTCP_DELAY_INITIALIZATION had been set, time to initialize now.
+  delay_initialization = false;
+  unsetenv(ENV_VAR_DELAY_INITIALIZATION); // We don't need this env. var. now.
   dmtcp_initialize();
 }
 
