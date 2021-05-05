@@ -45,12 +45,9 @@ Typical workflow for using MANA after untar'ing:
   make -j mana
   # Compile against libmana.so: Examples at contrib/mpi-proxy-split/text
   salloc -N 2 -q interactive -C haswell -t 01:00:00
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% MAKE IT WORK FOR mana_coordinator -i10 (no -i10 in mana_launch)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  bin/mana_coordinator
-  srun -N 2 bin/mana_launch -i10 <TARGET_DIR>/ping_pong.mana.exe
-  bin/mana_coordinator
+  bin/mana_coordinator -i10
+  srun -N 2 bin/mana_launch <TARGET_DIR>/ping_pong.mana.exe
+  bin/mana_coordinator -i10
   srun -N 2 bin/mana_restart ./
 \end{verbatim}
 
