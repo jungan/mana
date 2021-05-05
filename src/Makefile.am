@@ -136,9 +136,8 @@ __d_bindir__dmtcp_launch_SOURCES = dmtcp_launch.cpp
 ${manaplugindir}/mana_coordinator.o: ${manaplugindir}/mana_coordinator.cpp
 	cd ${manaplugindir} && ${MAKE} mana_coordinator.o
 	cp ${manaplugindir}/mana_coordinator.o ./
-${d_bindir}/mana_start_coordinator: ${srcdir}/mana_start_coordinator
-	ln -s ${d_bindir}/mana_start_coordinator \
-	      ${srcdir}/mana_start_coordinator
+${d_bindir}/mana_coordinator: ${srcdir}/mana_coordinator
+	ln -s ${d_bindir}/mana_coordinator ${srcdir}/mana_coordinator
 	ln -s ${d_bindir}/mana_start_coordinator ${srcdir}/mana_coordinator
 ${d_bindir}/mana_status: ${srcdir}/mana_status
 	ln -s ${d_bindir}/mana_status ${srcdir}/mana_status
