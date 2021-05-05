@@ -7,8 +7,8 @@
 
 \myProg{mana\_launch}  \oArg{--help} \oArg{--verbose} \oArg{DMTCP_OPTIONS}
                        \Arg{COMMAND} \oArg{ARGS...} \\
-\myProg{mana\_start\_coordinator}  \oArg{--help} \oArg{--verbose}
-                       \oArg{DMTCP_OPTIONS} \# OR: mana\_coordinator \\
+\myProg{mana\_coordinator}  \oArg{--help} \oArg{--verbose}
+                       \oArg{DMTCP_OPTIONS} \# OR: mana\_start\_coordinator \\
 \myProg{mana\_status}  \oArg{--help} \oArg{--verbose} \oArg{DMTCP_OPTIONS} \\
 \myProg{mana\_restart} \oArg{--help} \oArg{--verbose} \oArg{DMTCP_OPTIONS}
                        \Arg{CHECKPOINT_DIRECTORY}
@@ -45,9 +45,12 @@ Typical workflow for using MANA after untar'ing:
   make -j mana
   # Compile against libmana.so: Examples at contrib/mpi-proxy-split/text
   salloc -N 2 -q interactive -C haswell -t 01:00:00
-  bin/mana_start_coordinator
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% MAKE IT WORK FOR mana_coordinator -i10 (no -i10 in mana_launch)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  bin/mana_coordinator
   srun -N 2 bin/mana_launch -i10 <TARGET_DIR>/ping_pong.mana.exe
-  bin/mana_start_coordinator
+  bin/mana_coordinator
   srun -N 2 bin/mana_restart ./
 \end{verbatim}
 
