@@ -29,7 +29,7 @@ char *argv[];
     int buffer[4];
     int expected_output[4];
     MPI_Status status;
-    MPI_Request request = MPI_REQUEST_NULL; 
+    MPI_Request request = MPI_REQUEST_NULL;
 
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
@@ -48,13 +48,13 @@ char *argv[];
         }
         MPI_Ibcast(buffer,count,MPI_INT,root,MPI_COMM_WORLD, &request);
         printf("[Rank = %d]", myid);
-	sleep(1); // The checkpoint is likely to occur here.
+        sleep(1); // The checkpoint is likely to occur here.
 #ifdef MPI_TEST
-	while (1) {
+        while (1) {
           int flag = 0;
-	  MPI_Test(&request, &flag, &status);
-	  if (flag) { break; }
-	}
+          MPI_Test(&request, &flag, &status);
+          if (flag) { break; }
+        }
 #endif
 #ifdef MPI_WAIT
         MPI_Wait(&request, &status);
