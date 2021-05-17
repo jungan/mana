@@ -8,6 +8,8 @@ int iterations = 100;
 int main( int argc, char *argv[] )
 {
   int provided, flag, claimed;
+  int comm1_counter = 0;
+  int comm2_counter = 0;
 
   int ret = MPI_Init( 0, 0 );
   if (ret != MPI_SUCCESS) {
@@ -61,15 +63,21 @@ int main( int argc, char *argv[] )
 
   for (i = 0; i < iterations; i++) {
     if (comm1 != MPI_COMM_NULL) {
-      printf("Rank %d entering comm1\n", rank);fflush(stdout);
+      comm1_counter++;
+      printf("Rank %d entering comm1, iteration %d\n", rank, comm1_counter);
+      fflush(stdout);
       MPI_Barrier(comm1);
-      printf("Rank %d leaving comm1\n", rank);fflush(stdout);
+      printf("Rank %d leaving comm1, iteration %d\n", rank, comm1_counter);
+      fflush(stdout);
       sleep(1);
     }
     if (comm2 != MPI_COMM_NULL) {
-      printf("Rank %d entering comm2\n", rank);fflush(stdout);
+      comm2_counter++;
+      printf("Rank %d entering comm2, iteration %d\n", rank, comm2_counter);
+      fflush(stdout);
       MPI_Barrier(comm2);
-      printf("Rank %d leaving comm2\n", rank);fflush(stdout);
+      printf("Rank %d leaving comm2, iteration %d\n", rank, comm2_counter);
+      fflush(stdout);
       sleep(1);
     }
   }
