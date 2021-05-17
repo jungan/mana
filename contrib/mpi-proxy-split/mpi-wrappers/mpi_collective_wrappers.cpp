@@ -5,6 +5,18 @@
 #include "jfilesystem.h"
 #include "protectedfds.h"
 
+#if 1
+// #define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <linux/futex.h>
+#include <pthread.h>
+#endif
+
 #include "mpi_plugin.h"
 #include "drain_send_recv_packets.h"
 #include "mpi_nextfunc.h"
@@ -57,15 +69,50 @@ USER_DEFINED_WRAPPER(int, Ibcast,
 }
 
 #if 1
+static int THREAD=0;
+volatile MPI_Comm theRealComm;
+int addr1 = 0, addr2 = 0;
+static int *futex1=&addr1, *futex2=&addr2;
+
+#define WAIT(futex) syscall(SYS_futex, futex, FUTEX_WAIT_PRIVATE, 0, NULL, NULL, 0);
+#define WAKE(futex) syscall(SYS_futex, futex, FUTEX_WAKE_PRIVATE, 1, NULL, NULL, 0);
+
+void *aux_thread(void *arg) {
+  // JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+  SwitchContext ctx((unsigned long)lh_info.fsaddr);
+  while (1) {
+    int retval; /* Not passed back to primary thread */
+    WAIT(futex1);
+    retval = NEXT_FUNC(Barrier)(theRealComm);
+    WAKE(futex2);
+    pthread_yield();
+  }
+}
+
 USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
 {
   std::function<int()> realBarrierCb = [=]() {
-    int retval;
+    int retval = MPI_SUCCESS;
     DMTCP_PLUGIN_DISABLE_CKPT();
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
+#if 1
+// On Linux, priority is per-thread
+static pthread_t thread;
+if (!THREAD) {
+  setpriority(PRIO_PROCESS, getpid(), 19);
+  pthread_create(&thread, NULL, &aux_thread, NULL);
+  THREAD=1;
+}
+theRealComm = realComm;
+WAKE(futex1);
+pthread_yield();
+// The thread executes the MPI_Barrier
+WAIT(futex2);
+#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Barrier)(realComm);
     RETURN_TO_UPPER_HALF();
+#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
