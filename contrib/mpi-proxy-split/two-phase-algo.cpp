@@ -137,6 +137,10 @@ int
 TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
                      std::function<int(void)>doRealCollectiveComm)
 {
+#if 1
+  int retval;
+  retval = doRealCollectiveComm();
+#else
   if (comm == MPI_COMM_NULL) {
     return doRealCollectiveComm(); // lambda function: already captured args
   }
@@ -189,6 +193,7 @@ TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
   // }
   setCurrState(IS_READY);
   wrapperExit();
+#endif
   return retval;
 }
 
@@ -209,6 +214,7 @@ TwoPhaseAlgo::commit_begin(MPI_Comm comm)
 
 #endif
 
+#if 0
   // Call the trivial barrier if it's the second time this
   // communicator enters a wrapper after get a free pass
   // from PHASE_2
@@ -226,6 +232,7 @@ TwoPhaseAlgo::commit_begin(MPI_Comm comm)
     stop(comm);
   }
   setCurrState(IN_CS);
+#endif
 }
 
 void
