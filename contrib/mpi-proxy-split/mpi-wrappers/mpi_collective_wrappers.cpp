@@ -68,7 +68,7 @@ USER_DEFINED_WRAPPER(int, Ibcast,
   return twoPhaseCommit(comm, realBarrierCb);
 }
 
-#if 1
+#if 0
 static int THREAD=0;
 volatile MPI_Comm theRealComm;
 int addr1 = 0, addr2 = 0;
@@ -91,33 +91,77 @@ void *aux_thread(void *arg) {
 
 USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
 {
-  std::function<int()> realBarrierCb = [=]() {
-    int retval = MPI_SUCCESS;
-    DMTCP_PLUGIN_DISABLE_CKPT();
-    MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-#if 1
 // On Linux, priority is per-thread
 static pthread_t thread;
+//  WAKE(futex1);
+//  pthread_yield();
 if (!THREAD) {
   setpriority(PRIO_PROCESS, getpid(), 19);
   pthread_create(&thread, NULL, &aux_thread, NULL);
   THREAD=1;
 }
-theRealComm = realComm;
-WAKE(futex1);
-pthread_yield();
-// The thread executes the MPI_Barrier
-WAIT(futex2);
-#else
+  std::function<int()> realBarrierCb = [=]() {
+    int retval = MPI_SUCCESS;
+    DMTCP_PLUGIN_DISABLE_CKPT();
+    MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Barrier)(realComm);
     RETURN_TO_UPPER_HALF();
-#endif
+    DMTCP_PLUGIN_ENABLE_CKPT();
+    return retval;
+  };
+  return twoPhaseCommit(comm, realBarrierCb);
+//  WAIT(futex2);
+}
+
+#elif 1
+USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
+{
+    int retval = MPI_SUCCESS;
+//dmtcp_mpi::TwoPhaseAlgo::instance().commit_begin(comm);
+//    DMTCP_PLUGIN_DISABLE_CKPT();
+//    comm = VIRTUAL_TO_REAL_COMM(comm);
+MPI_Comm theRealComm = comm;
+//  // The thread executes the MPI_Barrier
+    static void* lh_fsaddr;
+    static void *uh_fsaddr;
+    static int initialized = 0;
+    if (!initialized) {
+      initialized = 1;
+      lh_fsaddr = lh_info.fsaddr - 64;
+      uh_fsaddr = (void*)pthread_self() - 64;
+    }
+// #define SIZE 1024
+// #define SIZE 720
+// #define SIZE 512
+// #define SIZE 256
+// #define SIZE 128
+#define SIZE 64
+    char *buf[SIZE];
+    memcpy(buf, uh_fsaddr, SIZE);
+    memcpy(uh_fsaddr, lh_fsaddr, SIZE);
+    retval = NEXT_FUNC(Barrier)(theRealComm);
+    memcpy(uh_fsaddr, buf, SIZE);
+//    DMTCP_PLUGIN_ENABLE_CKPT();
+//dmtcp_mpi::TwoPhaseAlgo::instance().commit_finish();
+return retval;
+}
+#elif 0
+USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
+{
+  std::function<int()> realBarrierCb = [=]() {
+    int retval = MPI_SUCCESS;
+    DMTCP_PLUGIN_DISABLE_CKPT();
+    MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
+    JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+    retval = NEXT_FUNC(Barrier)(realComm);
+    RETURN_TO_UPPER_HALF();
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
   return twoPhaseCommit(comm, realBarrierCb);
 }
+
 #else
 USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
 {
