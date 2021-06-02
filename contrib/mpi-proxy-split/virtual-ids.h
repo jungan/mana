@@ -303,7 +303,7 @@ namespace dmtcp_mpi
         JUMP_TO_LOWER_HALF(lh_info.fsaddr);
         NEXT_FUNC(Allgather)(&worldRank, 1, MPI_INT,
                              rbuf, 1, MPI_INT, realComm);
-        RETURN_TO_UPPER_HALF();
+        RETURN_TO_UPPER_HALF(__func__);
         DMTCP_PLUGIN_ENABLE_CKPT();
 #else
         MPI_Allgather(&worldRank, 1, MPI_INT, rbuf, 1, MPI_INT, comm);

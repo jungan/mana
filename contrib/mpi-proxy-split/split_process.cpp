@@ -394,7 +394,10 @@ initializeLowerHalf()
     while (*evp++ != NULL);
     auxvec = (ElfW(auxv_t) *) evp;
   }
-  JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+//  JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+  do {
+	  SwitchContext ctx((unsigned long)lh_info.fsaddr);
+
   // Clear any saved mappings in the lower half
   resetMmappedList_t resetMaps =
     (resetMmappedList_t)lh_info.resetMmappedListFptr;
@@ -419,7 +422,8 @@ initializeLowerHalf()
   // Restore the the auxiliary vector to correspond to the values of the upper
   // half.
   patchAuxv(auxvec, 0, 0, 0);
-  RETURN_TO_UPPER_HALF();
+//  RETURN_TO_UPPER_HALF(__func__);
+  } while(0);
   return ret;
 }
 

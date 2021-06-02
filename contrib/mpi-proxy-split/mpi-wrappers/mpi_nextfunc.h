@@ -90,7 +90,7 @@
     DMTCP_PLUGIN_DISABLE_CKPT();                                               \
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);                                           \
     retval = NEXT_FUNC(name)(APPLY(STRIP, args));                              \
-    RETURN_TO_UPPER_HALF();                                                    \
+    RETURN_TO_UPPER_HALF(__func__);                                                    \
     DMTCP_PLUGIN_ENABLE_CKPT();                                                \
     return retval;                                                             \
   }

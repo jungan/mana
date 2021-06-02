@@ -38,9 +38,13 @@ DEFINE_FNC(int, Init_thread, (int *) argc, (char ***) argv,
 USER_DEFINED_WRAPPER(int, Init, (int *) argc, (char ***) argv) {
   int retval;
   DMTCP_PLUGIN_DISABLE_CKPT();
-  JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+ // JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+do {
+	SwitchContext ctx((unsigned long)lh_info.fsaddr);
+
   retval = NEXT_FUNC(Init)(argc, argv);
-  RETURN_TO_UPPER_HALF();
+//   RETURN_TO_UPPER_HALF(__func__);
+} while(0); 
   initialize_drain_send_recv();
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
@@ -51,7 +55,7 @@ USER_DEFINED_WRAPPER(int, Init_thread, (int *) argc, (char ***) argv,
   DMTCP_PLUGIN_DISABLE_CKPT();
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Init_thread)(argc, argv, required, provided);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   initialize_drain_send_recv();
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
@@ -88,7 +92,7 @@ USER_DEFINED_WRAPPER(int, Get_count,
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Get_count)(status, realType, count);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }

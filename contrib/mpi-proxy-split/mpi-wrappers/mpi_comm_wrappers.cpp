@@ -42,7 +42,7 @@ USER_DEFINED_WRAPPER(int, Comm_size, (MPI_Comm) comm, (int *) world_size)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_size)(realComm, world_size);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -54,7 +54,7 @@ USER_DEFINED_WRAPPER(int, Comm_rank, (MPI_Comm) comm, (int *) world_rank)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_rank)(realComm, world_rank);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -69,8 +69,8 @@ USER_DEFINED_WRAPPER(int, Comm_create, (MPI_Comm) comm, (MPI_Group) group,
     MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(group);
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Comm_create)(realComm, realGroup, newcomm);
-    RETURN_TO_UPPER_HALF();
-    if (retval == MPI_SUCCESS && LOGGING()) {
+    RETURN_TO_UPPER_HALF(__func__);
+    if (retval == MPI_SUCCESS && LOGGING_MPI()) {
       MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
       VirtualGlobalCommId::instance().createGlobalId(virtComm);
       *newcomm = virtComm;
@@ -90,7 +90,7 @@ USER_DEFINED_WRAPPER(int, Abort, (MPI_Comm) comm, (int) errorcode)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Abort)(realComm, errorcode);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -104,7 +104,7 @@ USER_DEFINED_WRAPPER(int, Comm_compare,
   MPI_Comm realComm2 = VIRTUAL_TO_REAL_COMM(comm2);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_compare)(realComm1, realComm2, result);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -116,7 +116,7 @@ MPI_Comm_free_internal(MPI_Comm *comm)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(*comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_free)(&realComm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   return retval;
 }
 
@@ -124,7 +124,7 @@ USER_DEFINED_WRAPPER(int, Comm_free, (MPI_Comm *) comm)
 {
   DMTCP_PLUGIN_DISABLE_CKPT();
   int retval = MPI_Comm_free_internal(comm);
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     // NOTE: We cannot remove the old comm from the map, since
     // we'll need to replay this call to reconstruct any other comms that
     // might have been created using this comm.
@@ -146,8 +146,8 @@ USER_DEFINED_WRAPPER(int, Comm_set_errhandler,
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_set_errhandler)(realComm, errhandler);
-  RETURN_TO_UPPER_HALF();
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  RETURN_TO_UPPER_HALF(__func__);
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     LOG_CALL(restoreComms, Comm_set_errhandler, comm, errhandler);
   }
   DMTCP_PLUGIN_ENABLE_CKPT();
@@ -162,7 +162,7 @@ USER_DEFINED_WRAPPER(int, Topo_test,
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Topo_test)(realComm, status);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -175,8 +175,8 @@ USER_DEFINED_WRAPPER(int, Comm_split_type, (MPI_Comm) comm, (int) split_type,
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_split_type)(realComm, split_type, key, inf, newcomm);
-  RETURN_TO_UPPER_HALF();
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  RETURN_TO_UPPER_HALF(__func__);
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
     VirtualGlobalCommId::instance().createGlobalId(virtComm);
     *newcomm = virtComm;
@@ -197,7 +197,7 @@ USER_DEFINED_WRAPPER(int, Attr_get, (MPI_Comm) comm, (int) keyval,
   int realCommKeyval = VIRTUAL_TO_REAL_COMM_KEYVAL(keyval);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Attr_get)(realComm, realCommKeyval, attribute_val, flag);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -210,8 +210,8 @@ USER_DEFINED_WRAPPER(int, Attr_delete, (MPI_Comm) comm, (int) keyval)
   int realCommKeyval = VIRTUAL_TO_REAL_COMM_KEYVAL(keyval);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Attr_delete)(realComm, realCommKeyval);
-  RETURN_TO_UPPER_HALF();
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  RETURN_TO_UPPER_HALF(__func__);
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     LOG_CALL(restoreComms, Attr_delete, comm, keyval);
   }
   DMTCP_PLUGIN_ENABLE_CKPT();
@@ -227,8 +227,8 @@ USER_DEFINED_WRAPPER(int, Attr_put, (MPI_Comm) comm,
   int realCommKeyval = VIRTUAL_TO_REAL_COMM_KEYVAL(keyval);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Attr_put)(realComm, realCommKeyval, attribute_val);
-  RETURN_TO_UPPER_HALF();
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  RETURN_TO_UPPER_HALF(__func__);
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     LOG_CALL(restoreComms, Attr_put, comm, keyval, attribute_val);
   }
   DMTCP_PLUGIN_ENABLE_CKPT();
@@ -246,8 +246,8 @@ USER_DEFINED_WRAPPER(int, Comm_create_keyval,
   retval = NEXT_FUNC(Comm_create_keyval)(comm_copy_attr_fn,
                                          comm_delete_attr_fn,
                                          comm_keyval, extra_state);
-  RETURN_TO_UPPER_HALF();
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  RETURN_TO_UPPER_HALF(__func__);
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     int virtCommKeyval = ADD_NEW_COMM_KEYVAL(*comm_keyval);
     *comm_keyval = virtCommKeyval;
     LOG_CALL(restoreComms, Comm_create_keyval,
@@ -265,8 +265,8 @@ USER_DEFINED_WRAPPER(int, Comm_free_keyval, (int *) comm_keyval)
   int realCommKeyval = VIRTUAL_TO_REAL_COMM_KEYVAL(*comm_keyval);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_free_keyval)(&realCommKeyval);
-  RETURN_TO_UPPER_HALF();
-  if (retval == MPI_SUCCESS && LOGGING()) {
+  RETURN_TO_UPPER_HALF(__func__);
+  if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     // NOTE: We cannot remove the old comm_keyval from the map, since
     // we'll need to replay this call to reconstruct any other comms that
     // might have been created using this comm_keyval.
@@ -286,7 +286,7 @@ MPI_Comm_create_group_internal(MPI_Comm comm, MPI_Group group, int tag,
   MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(group);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_create_group)(realComm, realGroup, tag, newcomm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -296,7 +296,7 @@ USER_DEFINED_WRAPPER(int, Comm_create_group, (MPI_Comm) comm,
 {
   std::function<int()> realBarrierCb = [=]() {
     int retval = MPI_Comm_create_group_internal(comm, group, tag, newcomm);
-    if (retval == MPI_SUCCESS && LOGGING()) {
+    if (retval == MPI_SUCCESS && LOGGING_MPI()) {
       MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
       VirtualGlobalCommId::instance().createGlobalId(virtComm);
       *newcomm = virtComm;

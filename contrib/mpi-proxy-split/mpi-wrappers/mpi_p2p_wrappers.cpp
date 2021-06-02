@@ -44,7 +44,7 @@ USER_DEFINED_WRAPPER(int, Send,
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Send)(buf, count, realType, dest, tag, realComm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   updateLocalSends(count);
   DMTCP_PLUGIN_ENABLE_CKPT();
 #else
@@ -70,7 +70,7 @@ USER_DEFINED_WRAPPER(int, Isend,
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Isend)(buf, count, realType, dest, tag, realComm, request);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS) {
     // Updating global counter of send bytes
     int size;
@@ -106,7 +106,7 @@ USER_DEFINED_WRAPPER(int, Rsend, (const void*) ibuf, (int) count,
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Rsend)(ibuf, count, realType, dest, tag, realComm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS) {
     // Updating global counter of send bytes
     int size;
@@ -136,7 +136,7 @@ USER_DEFINED_WRAPPER(int, Recv,
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Recv)(buf, count, realType, source, tag, realComm, status);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
 #else
   MPI_Request req;
   retval = MPI_Irecv(buf, count, datatype, source, tag, comm, &req);
@@ -179,7 +179,7 @@ USER_DEFINED_WRAPPER(int, Irecv,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Irecv)(buf, count, realType,
                             source, tag, realComm, request);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -208,7 +208,7 @@ USER_DEFINED_WRAPPER(int, Sendrecv, (const void *) sendbuf, (int) sendcount,
   retval = NEXT_FUNC(Sendrecv)(sendbuf, sendcount, sendtype, dest, sendtag,
                                recvbuf, recvcount, recvtype, source, recvtag,
                                realComm, status);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
 #else
   get_fortran_constants();
@@ -249,7 +249,7 @@ USER_DEFINED_WRAPPER(int, Sendrecv_replace, (void *) buf, (int) count,
   retval = NEXT_FUNC(Sendrecv_replace)(buf, count, realType,
                                        dest, sendtag, source, recvtag,
                                        realComm, status);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
