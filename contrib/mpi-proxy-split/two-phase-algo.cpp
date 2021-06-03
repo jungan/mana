@@ -137,7 +137,7 @@ int
 TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
                      std::function<int(void)>doRealCollectiveComm)
 {
-#if 1
+#if 0
   int retval;
   retval = doRealCollectiveComm();
 #else
@@ -149,33 +149,33 @@ TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
   addCommHistory(comm);
   JTRACE("Invoking 2PC for")(collectiveFnc);
 
-  getcontext(&beforeTrivialBarrier);
+//  getcontext(&beforeTrivialBarrier);
 
-  // Call the trivial barrier
-  if (true /*isCkptPending() && inCommHistory(comm)*/) {
-    inTrivialBarrierOrPhase1 = true;
-    setCurrState(IN_TRIVIAL_BARRIER);
-    MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-    MPI_Request request;
-    int flag = 0;
-    DMTCP_PLUGIN_DISABLE_CKPT();
-    JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-    int retval = NEXT_FUNC(Ibarrier)(realComm, &request);
-    JASSERT(retval == MPI_SUCCESS)(retval)(realComm)(request)(comm);
-    RETURN_TO_UPPER_HALF();
-    DMTCP_PLUGIN_ENABLE_CKPT();
-    while (!flag) {
-      struct timespec test_interval = {.tv_sec = 0, .tv_nsec = 100000};
-      DMTCP_PLUGIN_DISABLE_CKPT();
-      JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-      int rc = NEXT_FUNC(Test)(&request, &flag, MPI_STATUS_IGNORE);
-      JASSERT(rc == MPI_SUCCESS)(rc)(realComm)(request)(comm);
-      RETURN_TO_UPPER_HALF();
-      DMTCP_PLUGIN_ENABLE_CKPT();
-      // FIXME: make this smaller
-      nanosleep(&test_interval, NULL);
-    }
-  }
+//  // Call the trivial barrier
+//  if (true /*isCkptPending() && inCommHistory(comm)*/) {
+//    inTrivialBarrierOrPhase1 = true;
+//    setCurrState(IN_TRIVIAL_BARRIER);
+//    MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
+//    MPI_Request request;
+//    int flag = 0;
+//    DMTCP_PLUGIN_DISABLE_CKPT();
+//    JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+//    int retval = NEXT_FUNC(Ibarrier)(realComm, &request);
+//    JASSERT(retval == MPI_SUCCESS)(retval)(realComm)(request)(comm);
+//    RETURN_TO_UPPER_HALF();
+//    DMTCP_PLUGIN_ENABLE_CKPT();
+//    while (!flag) {
+//      struct timespec test_interval = {.tv_sec = 0, .tv_nsec = 100000};
+//      DMTCP_PLUGIN_DISABLE_CKPT();
+//      JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+//      int rc = NEXT_FUNC(Test)(&request, &flag, MPI_STATUS_IGNORE);
+//      JASSERT(rc == MPI_SUCCESS)(rc)(realComm)(request)(comm);
+//      RETURN_TO_UPPER_HALF();
+//      DMTCP_PLUGIN_ENABLE_CKPT();
+//      // FIXME: make this smaller
+//      nanosleep(&test_interval, NULL);
+//    }
+//  }
 
   entering_phase1 = true;
   if (isCkptPending()) {
