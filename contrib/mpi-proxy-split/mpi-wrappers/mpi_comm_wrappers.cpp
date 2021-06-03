@@ -43,6 +43,8 @@ USER_DEFINED_WRAPPER(int, Comm_create, (MPI_Comm) comm, (MPI_Group) group,
   DMTCP_PLUGIN_DISABLE_CKPT();
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(group);
+  printf("group: %x, realGroup: %x\n", group, realGroup);
+  fflush(stdout);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_create)(realComm, realGroup, newcomm);
   RETURN_TO_UPPER_HALF();

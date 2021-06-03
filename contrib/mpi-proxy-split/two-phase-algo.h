@@ -102,6 +102,7 @@ namespace dmtcp_mpi
       // between DMTCP coordinator and peers
       void preSuspendBarrier(const void *);
 
+      void trivialBarrier(MPI_Comm comm);
     private:
 
       // Private constructor

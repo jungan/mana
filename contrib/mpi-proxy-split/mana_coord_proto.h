@@ -25,6 +25,9 @@ typedef enum __phase_t
   PHASE_2,
   IS_READY,
   READY_FOR_CKPT,
+  HYBRID_PHASE1,
+  IN_CS_INTENT_WASNT_SEEN,
+  IN_CS_NO_TRIV_BARRIER,
 } phase_t;
 
 typedef enum __query_t
@@ -35,7 +38,8 @@ typedef enum __query_t
   GET_STATUS,
   FREE_PASS,
   CKPT,
-  WAIT_STRAGGLER,
+  CONTINUE,
+  DO_TRIV_BARRIER,
 } query_t;
 
 // Struct to encapsulate the checkpointing state of a rank

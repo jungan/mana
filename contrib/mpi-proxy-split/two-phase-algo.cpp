@@ -133,6 +133,48 @@ unsigned long upperHalfFs;
 
 using namespace dmtcp_mpi;
 
+void
+TwoPhaseAlgo::trivialBarrier(MPI_Comm comm) {
+  getcontext(&beforeTrivialBarrier);
+
+  // Call the trivial barrier
+  inTrivialBarrierOrPhase1 = true;
+  setCurrState(IN_TRIVIAL_BARRIER);
+  MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
+  MPI_Request request;
+  int flag = 0;
+  DMTCP_PLUGIN_DISABLE_CKPT();
+  JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+  NEXT_FUNC(Ibarrier)(realComm, &request);
+  RETURN_TO_UPPER_HALF();
+  DMTCP_PLUGIN_ENABLE_CKPT();
+  while (!flag) {
+    // Different MPI implementations have different rules for MPI_Test
+    // and MPI_REQUEST_NULL. For OpenMPI, it's allowed to call MPI_TEST
+    // with MPI_REQUEST_NULL, and the flag will always be true. But for
+    // MPICH, it will cause a fatal error that the request is invalid.
+    // So we check the value of request before doing the MPI_Test. If
+    // it's MPI_REQUEST_NULL, then we break. This will work with both
+    // rules.
+    if (request == MPI_REQUEST_NULL) {
+      JTRACE("Trivial barrier request is null")(request)(flag)(realComm);
+      break;
+    }
+    DMTCP_PLUGIN_DISABLE_CKPT();
+    JUMP_TO_LOWER_HALF(lh_info.fsaddr);
+    JASSERT(request != MPI_REQUEST_NULL)(request)(flag)(realComm);
+    int rc = NEXT_FUNC(Test)(&request, &flag, MPI_STATUS_IGNORE);
+#ifdef DEBUG
+    JASSERT(rc == MPI_SUCCESS)(rc)(realComm)(request)(comm);
+#endif
+    RETURN_TO_UPPER_HALF();
+    DMTCP_PLUGIN_ENABLE_CKPT();
+    // FIXME: make this smaller
+    struct timespec test_interval = {.tv_sec = 0, .tv_nsec = 100000};
+    nanosleep(&test_interval, NULL);
+  }
+}
+
 int
 TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
                      std::function<int(void)>doRealCollectiveComm)
@@ -142,57 +184,29 @@ TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
   }
 
   wrapperEntry(comm);
-  addCommHistory(comm);
   JTRACE("Invoking 2PC for")(collectiveFnc);
 
-  getcontext(&beforeTrivialBarrier);
-
-  // Call the trivial barrier
-  if (true /*isCkptPending() && inCommHistory(comm)*/) {
-    inTrivialBarrierOrPhase1 = true;
-    setCurrState(IN_TRIVIAL_BARRIER);
-    MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-    MPI_Request request;
-    int flag = 0;
-    DMTCP_PLUGIN_DISABLE_CKPT();
-    JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-    NEXT_FUNC(Ibarrier)(realComm, &request);
-    RETURN_TO_UPPER_HALF();
-    DMTCP_PLUGIN_ENABLE_CKPT();
-    while (!flag) {
-      // Different MPI implementations have different rules for MPI_Test
-      // and MPI_REQUEST_NULL. For OpenMPI, it's allowed to call MPI_TEST
-      // with MPI_REQUEST_NULL, and the flag will always be true. But for
-      // MPICH, it will cause a fatal error that the request is invalid.
-      // So we check the value of request before doing the MPI_Test. If
-      // it's MPI_REQUEST_NULL, then we break. This will work with both
-      // rules.
-      if (request == MPI_REQUEST_NULL) {
-        JTRACE("Trivial barrier request is null")(request)(flag)(realComm);
-        break;
-      }
-      DMTCP_PLUGIN_DISABLE_CKPT();
-      JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-      JASSERT(request != MPI_REQUEST_NULL)(request)(flag)(realComm);
-      int rc = NEXT_FUNC(Test)(&request, &flag, MPI_STATUS_IGNORE);
-#ifdef DEBUG
-      JASSERT(rc == MPI_SUCCESS)(rc)(realComm)(request)(comm);
-#endif
-      RETURN_TO_UPPER_HALF();
-      DMTCP_PLUGIN_ENABLE_CKPT();
-      // FIXME: make this smaller
-      struct timespec test_interval = {.tv_sec = 0, .tv_nsec = 100000};
-      nanosleep(&test_interval, NULL);
-    }
-  }
-
-  entering_phase1 = true;
-  if (isCkptPending()) {
+  if (isCkptPending()) { // INTENT has arrived
+    // all ranks stops at HYBRID_PHASE1
+    setCurrState(HYBRID_PHASE1);
     stop(comm);
+    if (doTrivialBarrier) {
+      trivialBarrier(comm);
+      entering_phase1 = true;
+      if (isCkptPending()) {
+        setCurrState(PHASE_1);
+        stop(comm);
+      }
+      inTrivialBarrierOrPhase1 = false;
+      entering_phase1 = false;
+      setCurrState(IN_CS);
+    } else {
+      setCurrState(IN_CS_NO_TRIV_BARRIER);
+    }
+  } else {
+    setCurrState(IN_CS_INTENT_WASNT_SEEN);
   }
-  inTrivialBarrierOrPhase1 = false;
-  entering_phase1 = false;
-  setCurrState(IN_CS);
+
   int retval = doRealCollectiveComm();
   // INVARIANT: All of our peers have executed the real collective comm.
   // Now, we can re-enable checkpointing
@@ -287,7 +301,10 @@ TwoPhaseAlgo::preSuspendBarrier(const void *data)
       // FIXME: if we have the freepass and we are in the trivial barrier or
       // phase 1, we can report that we are in the critical section, because
       // we will be soon.
-      while (waitForSafeState() == PHASE_1);
+      phase_t st = waitForSafeState();
+      while (st == PHASE_1 || st == HYBRID_PHASE1) {
+        st = waitForSafeState();
+      }
       break;
 #if 0
     case CKPT:
@@ -304,8 +321,13 @@ TwoPhaseAlgo::preSuspendBarrier(const void *data)
       }
       break;
 #endif
-    case WAIT_STRAGGLER:
+    case CONTINUE:
       waitForSafeState();
+      break;
+    case DO_TRIV_BARRIER:
+      doTrivialBarrier = true;
+      phase1_freepass = true;
+      while (waitForSafeState() == HYBRID_PHASE1);
       break;
     default:
       JWARNING(false)(query).Text("Unknown query from coordinatory");
@@ -341,7 +363,6 @@ TwoPhaseAlgo::stop(MPI_Comm comm)
   // the coordinator
   // INVARIANT: Ckpt should be pending when we get here
   JASSERT(isCkptPending());
-  setCurrState(PHASE_1);
   entering_phase1 = false;
 
   while (isCkptPending() && !phase1_freepass) {
@@ -387,7 +408,10 @@ TwoPhaseAlgo::waitForSafeState()
   // The user thread will notify us if transition to any of these states
   _phaseCv.wait(lock, [this]{ return _currState == IN_TRIVIAL_BARRIER ||
                                      _currState == PHASE_1 ||
+                                     _currState == HYBRID_PHASE1 ||
                                      _currState == IN_CS ||
+                                     _currState == IN_CS_NO_TRIV_BARRIER ||
+                                     _currState == IN_CS_INTENT_WASNT_SEEN ||
                                      _currState == IS_READY; });
   return _currState;
 }

@@ -267,15 +267,18 @@ static std::ostream&
 operator<<(std::ostream &os, const phase_t &st)
 {
   switch (st) {
-    case ST_ERROR           : os << "ST_ERROR"; break;
-    case ST_UNKNOWN         : os << "ST_UNKNOWN"; break;
-    case IS_READY           : os << "IS_READY"; break;
-    case PHASE_1            : os << "PHASE_1"; break;
-    case IN_CS              : os << "IN_CS"; break;
-    case READY_FOR_CKPT     : os << "READY_FOR_CKPT"; break;
-    case PHASE_2            : os << "PHASE_2"; break;
-    case IN_TRIVIAL_BARRIER : os << "IN_TRIVIAL_BARRIER"; break;
-    default                 : os << "Unknown state"; break;
+    case ST_ERROR                : os << "ST_ERROR"; break;
+    case ST_UNKNOWN              : os << "ST_UNKNOWN"; break;
+    case IS_READY                : os << "IS_READY"; break;
+    case PHASE_1                 : os << "PHASE_1"; break;
+    case HYBRID_PHASE1           : os << "HYBRID_PHASE1"; break;
+    case IN_CS                   : os << "IN_CS"; break;
+    case IN_CS_INTENT_WASNT_SEEN : os << "IN_CS_INTENT_WASNT_SEEN"; break;
+    case IN_CS_NO_TRIV_BARRIER   : os << "IN_CS_NO_TRIV_BARRIER"; break;
+    case READY_FOR_CKPT          : os << "READY_FOR_CKPT"; break;
+    case PHASE_2                 : os << "PHASE_2"; break;
+    case IN_TRIVIAL_BARRIER      : os << "IN_TRIVIAL_BARRIER"; break;
+    default                      : os << "Unknown state"; break;
   }
   return os;
 }
@@ -327,7 +330,10 @@ allRanksReady(const ClientToStateMap& clientStates, long int size)
          (numPhase2Ranks + numBarrierRanks == size);
 #else
   for (RankKVPair c : clientStates) {
-    if (c.second.st == IN_CS) {
+    if (c.second.st == HYBRID_PHASE1 ||
+        c.second.st == IN_CS ||
+        c.second.st == IN_CS_NO_TRIV_BARRIER ||
+        c.second.st == IN_CS_INTENT_WASNT_SEEN) {
       return false;
     }
   }
@@ -414,6 +420,70 @@ unblockRanks(const ClientToStateMap& clientStates, long int size)
   query_t *queries = (query_t*) malloc(size * sizeof(query_t));
   memset(queries, NONE, size * sizeof(query_t));
 
+  // =========================================================================
+  // Hybrid algorithm
+  // If any rank anywhere is in state IN_CS_INTENT_WASNT_SEEN, then coord gives
+  // FREE_PASS to all ranks everywhere in HYBRID_PHASE1.
+  for (RankKVPair c : clientStates) {
+    if (queries[c.second.rank] != NONE) {
+      continue; // the message is already decided
+    }
+    if (c.second.st == IN_CS_INTENT_WASNT_SEEN) {
+      queries[c.second.rank] = CONTINUE;
+      for (RankKVPair other : clientStates) {
+        if (other.second.st == HYBRID_PHASE1) {
+          queries[other.second.rank] = FREE_PASS;
+        }
+      }
+    }
+  }
+
+  // if a group member is IN_CS_NO_TRIV_BARRIER, then all other group
+  // members with state HYBRID_PHASE1, get a FREE_PASS.
+  for (RankKVPair c : clientStates) {
+    if (queries[c.second.rank] != NONE) {
+      continue; // the message is already decided
+    }
+    if (c.second.st == IN_CS_NO_TRIV_BARRIER) {
+      queries[c.second.rank] = CONTINUE;
+      for (RankKVPair other : clientStates) {
+        if (other.second.comm == c.second.comm &&
+            other.second.st == HYBRID_PHASE1) {
+          queries[other.second.rank] = FREE_PASS;
+        }
+      }
+    }
+  }
+
+  // If a group member is in HYBRID_PHASE1, and no group member is in
+  // IN_CS_INTENT_WASNT_SEEN or in IN_CS_NO_TRIV_BARRIER, then
+  // the group member in HYBRID_PHASE1 gets a DO_TRIV_BARRIER msg.
+  for (RankKVPair c : clientStates) {
+    if (queries[c.second.rank] != NONE) {
+      continue; // the message is already decided
+    }
+    if (c.second.st == HYBRID_PHASE1) {
+      bool in_cs = false;
+      for (RankKVPair other : clientStates) {
+        if ((other.second.comm == c.second.comm &&
+             other.second.st == IN_CS_INTENT_WASNT_SEEN) ||
+            (other.second.comm == c.second.comm &&
+             other.second.st == IN_CS_NO_TRIV_BARRIER)) {
+          in_cs = true;
+          break;
+        }
+      }
+      if (!in_cs) {
+        for (RankKVPair other : clientStates) {
+          if (other.second.comm == c.second.comm) {
+            queries[other.second.rank] = DO_TRIV_BARRIER;
+          }
+        }
+      }
+    }
+  }
+
+  // =========================================================================
   // if some member of a communicator is in the critical section,
   // give free passes to members in phase 1 or the trivial barrier.
   for (RankKVPair c : clientStates) {
@@ -421,7 +491,7 @@ unblockRanks(const ClientToStateMap& clientStates, long int size)
       continue; // the message is already decided
     }
     if (c.second.st == IN_CS) {
-      queries[c.second.rank] = WAIT_STRAGGLER;
+      queries[c.second.rank] = CONTINUE;
       for (RankKVPair other : clientStates) {
         if (other.second.comm == c.second.comm &&
             other.second.st == PHASE_1) {
@@ -434,7 +504,7 @@ unblockRanks(const ClientToStateMap& clientStates, long int size)
   // other ranks just wait for a iteration.
   for (RankKVPair c : clientStates) {
     if (queries[c.second.rank] == NONE) {
-      queries[c.second.rank] = WAIT_STRAGGLER;
+      queries[c.second.rank] = CONTINUE;
     }
   }
 

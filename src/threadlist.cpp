@@ -61,6 +61,7 @@ MYINFO_GS_T myinfo_gs __attribute__((visibility("hidden")));
 #ifdef MPI
 bool inTrivialBarrierOrPhase1 = false;
 ucontext_t beforeTrivialBarrier;
+bool doTrivialBarrier = false;
 #endif
 
 static const char *DMTCP_PRGNAME_PREFIX = "DMTCP:";
@@ -643,6 +644,11 @@ stopthisthread(int signum)
   if (curThread == ckptThread) {
     return;
   }
+  // clear doTrivialBarrier so that after resume/restart 
+  // trivial barrier is disabled
+#ifdef MPI
+  doTrivialBarrier = false;
+#endif
 
 #if 0
 #ifdef MPI
