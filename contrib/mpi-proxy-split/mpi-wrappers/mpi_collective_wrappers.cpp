@@ -6,7 +6,10 @@
 #include "protectedfds.h"
 
 #if 1
-// #define _GNU_SOURCE         /* See feature_test_macros(7) */
+#define _GNU_SOURCE         /* See feature_test_macros(7) */
+#include <asm/prctl.h>
+#include <sys/prctl.h>
+
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <sys/time.h>
@@ -132,7 +135,9 @@ MPI_Comm theRealComm = comm;
     if (!initialized) {
       initialized = 1;
       lh_fsaddr = lh_info.fsaddr - 64;
-      uh_fsaddr = (void*)pthread_self() - 64;
+      // uh_fsaddr = (void*)pthread_self() - 64;
+      syscall(SYS_arch_prctl, ARCH_GET_FS, &uh_fsaddr);
+      uh_fsaddr = uh_fsaddr - 64;
     }
 // #define SIZE 1024
 // #define SIZE 720
