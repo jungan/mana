@@ -753,6 +753,7 @@ stopthisthread(int signum)
     }
 
 #ifdef MPI
+# if 0
     // If we are in a restart, and the user thread was in the trivial barrier or
     // phase 1, we return to early in the call frame before the trivial barrier
     // was called.
@@ -763,6 +764,7 @@ stopthisthread(int signum)
         setcontext(&beforeTrivialBarrier);
       }
     }
+# endif
 #endif
 
     JTRACE("User thread returning to user code")

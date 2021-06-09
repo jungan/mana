@@ -170,6 +170,7 @@ TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
   addCommHistory(comm);
   JTRACE("Invoking 2PC for")(collectiveFnc);
 
+#if 0
   // FIXME:  When the MPI_Ibarrier reliazly uses virtualized requests,
   //         we can replace 'befforeTrivialBarrier' by a more robust scheme:
   //         Call MPI_Ibarrier wrapper instead of internal MPI_Ibarrier
@@ -209,6 +210,26 @@ TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
       nanosleep(&test_interval, NULL);
     }
   }
+#else
+  setCurrState(IN_TRIVIAL_BARRIER);
+  MPI_Request request;
+  int flag = 0;
+  int tb_rc = MPI_Ibarrier(comm, &request);
+  JASSERT(tb_rc == MPI_SUCCESS)
+    .Text("The trivial barrier in two-phase-commit algorithm failed");
+  // FIXME: This while loop is the same as MPI_Wait. We can replace it
+  // with MPI_Wait if we can checkpoint during a MPI_Wait.
+  //
+  // MPI_Ibarrier can set request MPI_REQUEST_NULL on success if
+  // all ranks are present. Does the MPI standard allow this?
+  while (!flag && request != MPI_REQUEST_NULL) {
+    MPI_Test(&request, &flag, MPI_STATUS_IGNORE);
+    // FIXME: make this smaller
+    struct timespec test_interval = {.tv_sec = 0, .tv_nsec = 100000};
+    nanosleep(&test_interval, NULL);
+  }
+#endif
+
 
   entering_phase1 = true;
   if (isCkptPending()) {
