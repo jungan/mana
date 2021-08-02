@@ -100,7 +100,9 @@ USER_DEFINED_WRAPPER(int, Test, (MPI_Request*) request,
   if (retval == MPI_SUCCESS && *flag && LOGGING()) {
     clearPendingRequestFromLog(*request);
     REMOVE_OLD_REQUEST(*request);
-    *request = MPI_REQUEST_NULL;
+    if (*request != MPI_REQUEST_NULL) {
+      *request = MPI_REQUEST_NULL;
+    }
   }
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
@@ -217,7 +219,9 @@ USER_DEFINED_WRAPPER(int, Wait, (MPI_Request*) request, (MPI_Status*) status)
     if (flag && LOGGING()) {
       clearPendingRequestFromLog(*request);
       REMOVE_OLD_REQUEST(*request);
-      *request = MPI_REQUEST_NULL;
+      if (*request != MPI_REQUEST_NULL) {
+        *request = MPI_REQUEST_NULL;
+      }
     }
     DMTCP_PLUGIN_ENABLE_CKPT();
   }
