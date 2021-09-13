@@ -81,17 +81,9 @@ USER_DEFINED_WRAPPER(int, Bcast,
     DMTCP_PLUGIN_DISABLE_CKPT();
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Bcast)(buffer, count, realType, root, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -107,18 +99,10 @@ USER_DEFINED_WRAPPER(int, Ibcast,
   DMTCP_PLUGIN_DISABLE_CKPT();
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
-#ifdef SET_FS_CONTEXT
-  SET_LOWER_HALF_FS_CONTEXT();
-#else
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
   retval = NEXT_FUNC(Ibcast)(buffer, count, realType,
       root, realComm, request);
-#ifdef SET_FS_CONTEXT
-  RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
   RETURN_TO_UPPER_HALF();
-#endif
   if (retval == MPI_SUCCESS && LOGGING()) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -156,17 +140,9 @@ USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
   int retval;
   DMTCP_PLUGIN_DISABLE_CKPT();
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-#ifdef SET_FS_CONTEXT
-  SET_LOWER_HALF_FS_CONTEXT();
-#else
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
   retval = NEXT_FUNC(Barrier)(realComm);
-#ifdef SET_FS_CONTEXT
-  RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
   RETURN_TO_UPPER_HALF();
-#endif
   DMTCP_PLUGIN_ENABLE_CKPT();
 
   dmtcp_mpi::TwoPhaseAlgo::instance().commit_finish();
@@ -180,17 +156,9 @@ USER_DEFINED_WRAPPER(int, Ibarrier, (MPI_Comm) comm, (MPI_Request *) request)
   int retval;
   DMTCP_PLUGIN_DISABLE_CKPT();
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-#ifdef SET_FS_CONTEXT
-  SET_LOWER_HALF_FS_CONTEXT();
-#else
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
   retval = NEXT_FUNC(Ibarrier)(realComm, request);
-#ifdef SET_FS_CONTEXT
-  RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
   RETURN_TO_UPPER_HALF();
-#endif
   if (retval == MPI_SUCCESS && LOGGING()) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -215,11 +183,7 @@ USER_DEFINED_WRAPPER(int, Allreduce,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
     MPI_Op realOp = VIRTUAL_TO_REAL_OP(op);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     if (sendbuf == FORTRAN_MPI_IN_PLACE) {
       retval = NEXT_FUNC(Allreduce)(MPI_IN_PLACE, recvbuf, count,
                                     realType, realOp, realComm);
@@ -227,11 +191,7 @@ USER_DEFINED_WRAPPER(int, Allreduce,
       retval = NEXT_FUNC(Allreduce)(sendbuf, recvbuf, count,
                                     realType, realOp, realComm);
     }
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -249,18 +209,10 @@ USER_DEFINED_WRAPPER(int, Reduce,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
     MPI_Op realOp = VIRTUAL_TO_REAL_OP(op);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Reduce)(sendbuf, recvbuf, count,
                                realType, realOp, root, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -277,18 +229,10 @@ USER_DEFINED_WRAPPER(int, Ireduce,
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   MPI_Op realOp = VIRTUAL_TO_REAL_OP(op);
-#ifdef SET_FS_CONTEXT
-  SET_LOWER_HALF_FS_CONTEXT();
-#else
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
   retval = NEXT_FUNC(Ireduce)(sendbuf, recvbuf, count,
       realType, realOp, root, realComm, request);
-#ifdef SET_FS_CONTEXT
-  RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
   RETURN_TO_UPPER_HALF();
-#endif
   if (retval == MPI_SUCCESS && LOGGING()) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -312,18 +256,10 @@ MPI_Alltoall_internal(const void *sendbuf, int sendcount,
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
   MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-  SET_LOWER_HALF_FS_CONTEXT();
-#else
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
   retval = NEXT_FUNC(Alltoall)(sendbuf, sendcount, realSendType, recvbuf,
       recvcount, realRecvType, realComm);
-#ifdef SET_FS_CONTEXT
-  RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
   RETURN_TO_UPPER_HALF();
-#endif
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -353,19 +289,11 @@ USER_DEFINED_WRAPPER(int, Alltoallv,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Alltoallv)(sendbuf, sendcounts, sdispls, realSendType,
                                   recvbuf, recvcounts, rdispls, realRecvType,
                                   realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -382,19 +310,11 @@ USER_DEFINED_WRAPPER(int, Gather, (const void *) sendbuf, (int) sendcount,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Gather)(sendbuf, sendcount, realSendType,
                                recvbuf, recvcount, realRecvType,
                                root, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -412,19 +332,11 @@ USER_DEFINED_WRAPPER(int, Gatherv, (const void *) sendbuf, (int) sendcount,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Gatherv)(sendbuf, sendcount, realSendType,
                                 recvbuf, recvcounts, displs, realRecvType,
                                 root, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -441,19 +353,11 @@ USER_DEFINED_WRAPPER(int, Scatter, (const void *) sendbuf, (int) sendcount,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Scatter)(sendbuf, sendcount, realSendType,
                                 recvbuf, recvcount, realRecvType,
                                 root, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -471,19 +375,11 @@ USER_DEFINED_WRAPPER(int, Scatterv, (const void *) sendbuf,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Scatterv)(sendbuf, sendcounts, displs, realSendType,
                                  recvbuf, recvcount, realRecvType,
                                  root, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -500,19 +396,11 @@ USER_DEFINED_WRAPPER(int, Allgather, (const void *) sendbuf, (int) sendcount,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Allgather)(sendbuf, sendcount, realSendType,
                                   recvbuf, recvcount, realRecvType,
                                   realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -530,19 +418,11 @@ USER_DEFINED_WRAPPER(int, Allgatherv, (const void *) sendbuf, (int) sendcount,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realSendType = VIRTUAL_TO_REAL_TYPE(sendtype);
     MPI_Datatype realRecvType = VIRTUAL_TO_REAL_TYPE(recvtype);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Allgatherv)(sendbuf, sendcount, realSendType,
                                    recvbuf, recvcounts, displs, realRecvType,
                                    realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -559,18 +439,10 @@ USER_DEFINED_WRAPPER(int, Scan, (const void *) sendbuf, (void *) recvbuf,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
     MPI_Op realOp = VIRTUAL_TO_REAL_TYPE(op);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Scan)(sendbuf, recvbuf, count,
                              realType, realOp, realComm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -585,17 +457,9 @@ USER_DEFINED_WRAPPER(int, Comm_split, (MPI_Comm) comm, (int) color, (int) key,
     int retval;
     DMTCP_PLUGIN_DISABLE_CKPT();
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Comm_split)(realComm, color, key, newcomm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     if (retval == MPI_SUCCESS && LOGGING()) {
       MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
       VirtualGlobalCommId::instance().createGlobalId(virtComm);
@@ -615,17 +479,9 @@ USER_DEFINED_WRAPPER(int, Comm_dup, (MPI_Comm) comm, (MPI_Comm *) newcomm)
     int retval;
     DMTCP_PLUGIN_DISABLE_CKPT();
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
-#ifdef SET_FS_CONTEXT
-    SET_LOWER_HALF_FS_CONTEXT();
-#else
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
-#endif
     retval = NEXT_FUNC(Comm_dup)(realComm, newcomm);
-#ifdef SET_FS_CONTEXT
-    RESTORE_UPPER_HALF_FS_CONTEXT();
-#else
     RETURN_TO_UPPER_HALF();
-#endif
     if (retval == MPI_SUCCESS && LOGGING()) {
       MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
       VirtualGlobalCommId::instance().createGlobalId(virtComm);

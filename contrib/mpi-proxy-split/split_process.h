@@ -57,6 +57,7 @@ class SwitchContext
     ~SwitchContext();
 };
 
+#ifndef SET_FS_CONTEXT
 // ===================================================
 // FIXME: Fix this after the Linux 5.9 FSGSBASE patch
 // Helper macro to be used whenever making a jump from the upper half to
@@ -69,7 +70,7 @@ class SwitchContext
 // the upper half.
 #define RETURN_TO_UPPER_HALF() \
   } while (0)
-
+#endif
 // ===================================================
 // Workaround for quickly changing the fs address
 static void* lh_fsaddr;
@@ -113,12 +114,14 @@ static int fsaddr_initialized = 0;
  * [15] .tbss             NOBITS           000000000e64d530  0044d52c
  *      0000000000000462  0000000000000000 WAT       0     0     8
  */
-#define LH_TLS_SIZE 0x4a0
+#define LH_TLS_SIZE 0xcc0
 #endif
 static const size_t TCB_HEADER_SIZE = 120; // offset of __glibc_reserved2
+
 static char fsaddr_buf[LH_TLS_SIZE + TCB_HEADER_SIZE];
 
-static inline void SET_LOWER_HALF_FS_CONTEXT() {
+#ifdef SET_FS_CONTEXT
+static inline void JUMP_TO_LOWER_HALF(void *lhFs) {
   // Compute the upper-half and lower-half fs addresses
   if (!fsaddr_initialized) {
     fsaddr_initialized = 1;
@@ -149,13 +152,15 @@ static inline void SET_LOWER_HALF_FS_CONTEXT() {
   ((void **)(uh_fsaddr + LH_TLS_SIZE))[0] = (void *) (uh_fsaddr + LH_TLS_SIZE);
 }
 
-static inline void RESTORE_UPPER_HALF_FS_CONTEXT() {
-  memcpy(lh_fsaddr, uh_fsaddr, LH_TLS_SIZE);
+static inline void RETURN_TO_UPPER_HALF() {
+  memcpy(lh_fsaddr, uh_fsaddr, LH_TLS_SIZE + TCB_HEADER_SIZE);
   memcpy(uh_fsaddr, fsaddr_buf, LH_TLS_SIZE + TCB_HEADER_SIZE);
 
   // restore self pointer to original driver-half TLS location
+  // Only copy TLS back to driver half
   ((void **)(lh_fsaddr + LH_TLS_SIZE))[0] = (void *) (lh_fsaddr + LH_TLS_SIZE);
 }
+#endif
 
 // ===================================================
 // This function splits the process by initializing the lower half with the
