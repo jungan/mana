@@ -83,7 +83,7 @@ USER_DEFINED_WRAPPER(int, Bcast,
     MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Bcast)(buffer, count, realType, root, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -102,7 +102,7 @@ USER_DEFINED_WRAPPER(int, Ibcast,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Ibcast)(buffer, count, realType,
       root, realComm, request);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -125,7 +125,7 @@ USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Barrier)(realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -142,7 +142,7 @@ USER_DEFINED_WRAPPER(int, Barrier, (MPI_Comm) comm)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Barrier)(realComm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
 
   dmtcp_mpi::TwoPhaseAlgo::instance().commit_finish();
@@ -158,7 +158,7 @@ USER_DEFINED_WRAPPER(int, Ibarrier, (MPI_Comm) comm, (MPI_Request *) request)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Ibarrier)(realComm, request);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -191,7 +191,7 @@ USER_DEFINED_WRAPPER(int, Allreduce,
       retval = NEXT_FUNC(Allreduce)(sendbuf, recvbuf, count,
                                     realType, realOp, realComm);
     }
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -212,7 +212,7 @@ USER_DEFINED_WRAPPER(int, Reduce,
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Reduce)(sendbuf, recvbuf, count,
                                realType, realOp, root, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -232,7 +232,7 @@ USER_DEFINED_WRAPPER(int, Ireduce,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Ireduce)(sendbuf, recvbuf, count,
       realType, realOp, root, realComm, request);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Request virtRequest = ADD_NEW_REQUEST(*request);
     *request = virtRequest;
@@ -259,7 +259,7 @@ MPI_Alltoall_internal(const void *sendbuf, int sendcount,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Alltoall)(sendbuf, sendcount, realSendType, recvbuf,
       recvcount, realRecvType, realComm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -293,7 +293,7 @@ USER_DEFINED_WRAPPER(int, Alltoallv,
     retval = NEXT_FUNC(Alltoallv)(sendbuf, sendcounts, sdispls, realSendType,
                                   recvbuf, recvcounts, rdispls, realRecvType,
                                   realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -314,7 +314,7 @@ USER_DEFINED_WRAPPER(int, Gather, (const void *) sendbuf, (int) sendcount,
     retval = NEXT_FUNC(Gather)(sendbuf, sendcount, realSendType,
                                recvbuf, recvcount, realRecvType,
                                root, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -336,7 +336,7 @@ USER_DEFINED_WRAPPER(int, Gatherv, (const void *) sendbuf, (int) sendcount,
     retval = NEXT_FUNC(Gatherv)(sendbuf, sendcount, realSendType,
                                 recvbuf, recvcounts, displs, realRecvType,
                                 root, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -357,7 +357,7 @@ USER_DEFINED_WRAPPER(int, Scatter, (const void *) sendbuf, (int) sendcount,
     retval = NEXT_FUNC(Scatter)(sendbuf, sendcount, realSendType,
                                 recvbuf, recvcount, realRecvType,
                                 root, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -379,7 +379,7 @@ USER_DEFINED_WRAPPER(int, Scatterv, (const void *) sendbuf,
     retval = NEXT_FUNC(Scatterv)(sendbuf, sendcounts, displs, realSendType,
                                  recvbuf, recvcount, realRecvType,
                                  root, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -400,7 +400,7 @@ USER_DEFINED_WRAPPER(int, Allgather, (const void *) sendbuf, (int) sendcount,
     retval = NEXT_FUNC(Allgather)(sendbuf, sendcount, realSendType,
                                   recvbuf, recvcount, realRecvType,
                                   realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -422,7 +422,7 @@ USER_DEFINED_WRAPPER(int, Allgatherv, (const void *) sendbuf, (int) sendcount,
     retval = NEXT_FUNC(Allgatherv)(sendbuf, sendcount, realSendType,
                                    recvbuf, recvcounts, displs, realRecvType,
                                    realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -442,7 +442,7 @@ USER_DEFINED_WRAPPER(int, Scan, (const void *) sendbuf, (void *) recvbuf,
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Scan)(sendbuf, recvbuf, count,
                              realType, realOp, realComm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     DMTCP_PLUGIN_ENABLE_CKPT();
     return retval;
   };
@@ -459,7 +459,7 @@ USER_DEFINED_WRAPPER(int, Comm_split, (MPI_Comm) comm, (int) color, (int) key,
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Comm_split)(realComm, color, key, newcomm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     if (retval == MPI_SUCCESS && LOGGING_MPI()) {
       MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
       VirtualGlobalCommId::instance().createGlobalId(virtComm);
@@ -481,7 +481,7 @@ USER_DEFINED_WRAPPER(int, Comm_dup, (MPI_Comm) comm, (MPI_Comm *) newcomm)
     MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     retval = NEXT_FUNC(Comm_dup)(realComm, newcomm);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     if (retval == MPI_SUCCESS && LOGGING_MPI()) {
       MPI_Comm virtComm = ADD_NEW_COMM(*newcomm);
       VirtualGlobalCommId::instance().createGlobalId(virtComm);

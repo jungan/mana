@@ -40,7 +40,7 @@ USER_DEFINED_WRAPPER(int, Comm_group, (MPI_Comm) comm, (MPI_Group *) group)
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Comm_group)(realComm, group);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Group virtGroup = ADD_NEW_GROUP(*group);
     *group = virtGroup;
@@ -57,7 +57,7 @@ USER_DEFINED_WRAPPER(int, Group_size, (MPI_Group) group, (int *) size)
   MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(group);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Group_size)(realGroup, size);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -69,7 +69,7 @@ MPI_Group_free_internal(MPI_Group *group)
   MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(*group);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Group_free)(&realGroup);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   return retval;
 }
 
@@ -99,7 +99,7 @@ USER_DEFINED_WRAPPER(int, Group_compare, (MPI_Group) group1,
   MPI_Group realGroup2 = VIRTUAL_TO_REAL_GROUP(group2);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Group_compare)(realGroup1, realGroup2, result);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -111,7 +111,7 @@ USER_DEFINED_WRAPPER(int, Group_rank, (MPI_Group) group, (int *) rank)
   MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(group);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Group_rank)(realGroup, rank);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -124,7 +124,7 @@ USER_DEFINED_WRAPPER(int, Group_incl, (MPI_Group) group, (int) n,
   MPI_Group realGroup = VIRTUAL_TO_REAL_GROUP(group);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Group_incl)(realGroup, n, ranks, newgroup);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Group virtGroup = ADD_NEW_GROUP(*newgroup);
     *newgroup = virtGroup;
@@ -146,7 +146,7 @@ USER_DEFINED_WRAPPER(int, Group_translate_ranks, (MPI_Group) group1,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Group_translate_ranks)(realGroup1, n, ranks1,
                                             realGroup2, ranks2);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }

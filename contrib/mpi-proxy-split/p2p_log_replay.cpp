@@ -198,7 +198,7 @@ replayMpiP2pOnRestart()
         NEXT_FUNC(Irecv)(call->recvbuf, call->count,
                          realType, call->remote_node,
                          call->tag, realComm, &realRequest);
-        RETURN_TO_UPPER_HALF();
+        RETURN_TO_UPPER_HALF(__func__);
         UPDATE_REQUEST_MAP(request, realRequest);
 #endif
         JASSERT(retval == MPI_SUCCESS).Text("Error while replaying recv");

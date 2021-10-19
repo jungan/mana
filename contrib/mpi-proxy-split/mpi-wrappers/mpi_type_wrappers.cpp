@@ -39,7 +39,7 @@ USER_DEFINED_WRAPPER(int, Type_size, (MPI_Datatype) datatype, (int *) size)
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(datatype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Type_size)(realType, size);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -51,7 +51,7 @@ USER_DEFINED_WRAPPER(int, Type_free, (MPI_Datatype *) type)
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(*type);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Type_free)(&realType);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     // NOTE: We cannot remove the old type, since we'll need
     // to replay this call to reconstruct any new type that might
@@ -71,7 +71,7 @@ USER_DEFINED_WRAPPER(int, Type_commit, (MPI_Datatype *) type)
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(*type);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Type_commit)(&realType);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval != MPI_SUCCESS) {
     realType = REMOVE_OLD_TYPE(*type);
   } else {
@@ -91,7 +91,7 @@ USER_DEFINED_WRAPPER(int, Type_contiguous, (int) count, (MPI_Datatype) oldtype,
   MPI_Datatype realType = VIRTUAL_TO_REAL_TYPE(oldtype);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Type_contiguous)(count, realType, newtype);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Datatype virtType = ADD_NEW_TYPE(*newtype);
     *newtype = virtType;
@@ -111,7 +111,7 @@ USER_DEFINED_WRAPPER(int, Type_vector, (int) count, (int) blocklength,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Type_vector)(count, blocklength,
                                   stride, realType, newtype);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Datatype virtType = ADD_NEW_TYPE(*newtype);
     *newtype = virtType;
@@ -144,7 +144,7 @@ USER_DEFINED_WRAPPER(int, Type_create_struct, (int) count,
   retval = NEXT_FUNC(Type_create_struct)(count, array_of_blocklengths,
                                    array_of_displacements,
                                    realTypes, newtype);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Datatype virtType = ADD_NEW_TYPE(*newtype);
     *newtype = virtType;
@@ -169,7 +169,7 @@ USER_DEFINED_WRAPPER(int, Type_indexed, (int) count,
   retval = NEXT_FUNC(Type_indexed)(count, array_of_blocklengths,
                                    array_of_displacements,
                                    realType, newtype);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   if (retval == MPI_SUCCESS && LOGGING_MPI()) {
     MPI_Datatype virtType = ADD_NEW_TYPE(*newtype);
     *newtype = virtType;
@@ -191,7 +191,7 @@ USER_DEFINED_WRAPPER(int, Pack_size, (int) incount,
   MPI_Comm realComm = VIRTUAL_TO_REAL_COMM(comm);
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Pack_size)(incount, realType, realComm, size);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
@@ -207,7 +207,7 @@ USER_DEFINED_WRAPPER(int, Pack, (const void*) inbuf, (int) incount,
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   retval = NEXT_FUNC(Pack)(inbuf, incount, realType, outbuf,
                            outsize, position, realComm);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   DMTCP_PLUGIN_ENABLE_CKPT();
   return retval;
 }
