@@ -92,6 +92,7 @@ dmtcp_skip_memory_region_ckpting(const ProcMapsArea *area)
   return 0;
 }
 
+/* Shall I just add TLS/TCB tracking here? */
 // Handler for SIGSEGV: forces the code into an infinite loop for attaching
 // GDB and debugging
 void

@@ -24,7 +24,9 @@
 
 #include <string.h>
 #include <pthread.h>
+#include <sys/mman.h>
 #include <stdio.h>
+#include <vector>
 
 #include "jassert.h"
 #include "lower_half_api.h"
@@ -75,8 +77,9 @@ class SwitchContext
 #endif
 // ===================================================
 // Workaround for quickly changing the fs address
-static void* lh_fsaddr;
+static void *lh_fsaddr;
 static void *uh_fsaddr;
+static void *uh_fsaddr_tcb;
 static int fsaddr_initialized = 0;
 // in glibc 2.26 for x86_64
 // typedef struct
@@ -118,10 +121,13 @@ static int fsaddr_initialized = 0;
  */
 #define LH_TLS_SIZE 0xcc0
 #endif
-static const size_t TCB_HEADER_SIZE = 120; // offset of __glibc_reserved2
-
+constexpr static size_t TCB_HEADER_SIZE = 120; // offset of __glibc_reserved2
+constexpr static size_t PTHREAD_SIZE = 2304; // sizeof (struct pthread)
+constexpr static size_t PAGE_SIZE_4KB = 4096;
+constexpr static size_t PAGE_SIZE_4KB_ALIGN = ~(PAGE_SIZE_4KB - 1);
 static char fsaddr_buf[LH_TLS_SIZE + TCB_HEADER_SIZE];
 static char debug_buf[LH_TLS_SIZE + TCB_HEADER_SIZE];
+static std::vector<void *> changed_tls_tcb;
 
 #ifdef SET_FS_CONTEXT
 struct dtv_pointer
@@ -163,14 +169,37 @@ typedef struct
   //void *__padding[8];
 } tcbhead_t;
 
+static inline void *BaseAddr(void *addr, size_t align) {
+  return (void *)((uintptr_t)addr & PAGE_SIZE_4KB_ALIGN);
+}
+
+void SegvfaultHandler(int signum, siginfo_t *siginfo, void *context) {
+  changed_tls_tcb.push_back(siginfo->si_addr);
+  /* TODO fulfill the request and continue */
+}
+
+static void AddSegvHandler() {
+  struct sigaction act = {0}, old_act;
+  act.sa_sigaction = &SegvfaultHandler;
+  act.sa_flags = SA_RESTART | SA_SIGINFO;
+  sigemptyset(&act.sa_mask);
+  if (sigaction(SIGSEGV, &act, &old_act)) {
+    printf("Failed to install segv handler\n");
+  }
+}
 
 static inline void JUMP_TO_LOWER_HALF(void *lhFs) {
   // Compute the upper-half and lower-half fs addresses
   if (!fsaddr_initialized) {
     fsaddr_initialized = 1;
-    printf("%d %d %p %p %p %lx\n", __LINE__, getpid(), lh_fsaddr, lh_info.fsaddr, uh_fsaddr, pthread_self());
     lh_fsaddr = lh_info.fsaddr - LH_TLS_SIZE;
-    uh_fsaddr = (char*)pthread_self() - LH_TLS_SIZE;
+    uh_fsaddr_tcb = (void *)pthread_self();
+    uh_fsaddr = (char*)uh_fsaddr_tcb - LH_TLS_SIZE;
+
+    /* TODO:
+     * AddSegvHandler()
+     */
+
     printf("%d %d %p %p %p %lx\n", __LINE__, getpid(), lh_fsaddr, lh_info.fsaddr, uh_fsaddr, pthread_self());
     fflush(stdout);
 tcbhead_t *uhhead = (tcbhead_t *)(uh_fsaddr + LH_TLS_SIZE);
@@ -183,7 +212,6 @@ lhhead->__glibc_reserved1, lhhead->__glibc_unused1, lhhead->__private_tm[0], lhh
 uhhead->tcb, uhhead->dtv, uhhead->self, uhhead->multiple_threads, uhhead->gscope_flag, uhhead->sysinfo, uhhead->stack_guard, uhhead->pointer_guard, uhhead->vgetcpu_cache[0], uhhead->vgetcpu_cache[1],
 uhhead->__glibc_reserved1, uhhead->__glibc_unused1, uhhead->__private_tm[0], uhhead->__private_tm[1], uhhead->__private_tm[2], uhhead->__private_tm[3], uhhead->__private_ss);
 		  fflush(stdout);
-
   }
   memcpy(fsaddr_buf, uh_fsaddr, LH_TLS_SIZE + TCB_HEADER_SIZE);
   memcpy(uh_fsaddr, lh_fsaddr, LH_TLS_SIZE + TCB_HEADER_SIZE);
@@ -208,6 +236,13 @@ uhhead->__glibc_reserved1, uhhead->__glibc_unused1, uhhead->__private_tm[0], uhh
   // change self pointer to new application half TLS location
   ((void **)(uh_fsaddr + LH_TLS_SIZE))[0] = (void *) (uh_fsaddr + LH_TLS_SIZE);
   ((void **)(uh_fsaddr + LH_TLS_SIZE))[2] = (void *) (uh_fsaddr + LH_TLS_SIZE);
+
+  /* Set uh tls&tcb to read only */
+  if (mprotect(BaseAddr(uh_fsaddr_tcb, PAGE_SIZE_4KB_ALIGN), (size_t)((uintptr_t)uh_fsaddr_tcb & (PAGE_SIZE_4KB - 1))  + PTHREAD_SIZE, PROT_READ)) {
+    printf("%s %d %m\n", __func__, __LINE__);
+    fflush(stdout);
+  }
+
 }
 
 static inline void RETURN_TO_UPPER_HALF(const char* func) {
@@ -233,7 +268,13 @@ tcbhead_t *lhhead = (tcbhead_t *)(lh_fsaddr + LH_TLS_SIZE);
 	  changed = true;
           memcpy(debug_buf, lh_fsaddr, LH_TLS_SIZE + TCB_HEADER_SIZE);
   }
-  
+
+  /* Set uh tls&tcb back to RW */
+  if (mprotect(BaseAddr(uh_fsaddr_tcb, PAGE_SIZE_4KB_ALIGN), (size_t)((uintptr_t)uh_fsaddr_tcb & (PAGE_SIZE_4KB - 1)) + PTHREAD_SIZE, PROT_READ | PROT_WRITE)) {
+    printf("%s %d %m\n", __func__, __LINE__);
+    fflush(stdout);
+  }
+
   memcpy(lh_fsaddr, uh_fsaddr, LH_TLS_SIZE + TCB_HEADER_SIZE);
   memcpy(uh_fsaddr, fsaddr_buf, LH_TLS_SIZE + TCB_HEADER_SIZE);
 
@@ -241,6 +282,7 @@ tcbhead_t *lhhead = (tcbhead_t *)(lh_fsaddr + LH_TLS_SIZE);
   // Only copy TLS back to driver half
   ((void **)(lh_fsaddr + LH_TLS_SIZE))[0] = (void *) (lh_fsaddr + LH_TLS_SIZE);
   ((void **)(lh_fsaddr + LH_TLS_SIZE))[2] = (void *) (lh_fsaddr + LH_TLS_SIZE);
+
   // Can only call printf in uh
   if (changed) {
 //    JTRACE("changed ls_fsaddr uh_fsaddr") (lh_fsaddr) (uh_fsaddr);
