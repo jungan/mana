@@ -118,7 +118,7 @@ static int fsaddr_initialized = 0;
  */
 #define LH_TLS_SIZE 0xcc0
 #endif
-static const size_t TCB_HEADER_SIZE = 120; // offset of __glibc_reserved2
+static const size_t TCB_HEADER_SIZE = 2304; // offset of __glibc_reserved2
 
 static char fsaddr_buf[LH_TLS_SIZE + TCB_HEADER_SIZE];
 static char debug_buf[LH_TLS_SIZE + TCB_HEADER_SIZE];
