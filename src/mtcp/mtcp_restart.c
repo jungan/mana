@@ -742,7 +742,7 @@ main(int argc, char *argv[], char **environ)
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     // MPI_Init is called here. GNI memory areas will be loaded by MPI_Init.
     rank = ((getRankFptr_t)lh_info.getRankFptr)();
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
 
     afterLoadingGniDriverUnblockAddressRanges(start1, end1, start2, end2);
     unreserve_fds_upper_half(reserved_fds,total_reserved_fds);

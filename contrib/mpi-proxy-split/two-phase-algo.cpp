@@ -95,11 +95,11 @@ int
 TwoPhaseAlgo::commit(MPI_Comm comm, const char *collectiveFnc,
                      std::function<int(void)>doRealCollectiveComm)
 {
-  if (!LOGGING() || comm == MPI_COMM_NULL) {
+  if (!LOGGING_MPI() || comm == MPI_COMM_NULL) {
     return doRealCollectiveComm(); // lambda function: already captured args
   }
 
-  if (!LOGGING()) {
+  if (!LOGGING_MPI()) {
     return doRealCollectiveComm();
   }
 
@@ -134,7 +134,7 @@ TwoPhaseAlgo::commit_begin(MPI_Comm comm)
   int tb_rc = -1;
   JUMP_TO_LOWER_HALF(lh_info.fsaddr);
   tb_rc = NEXT_FUNC(Ibarrier)(realComm, &request);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   MPI_Request virtRequest = ADD_NEW_REQUEST(request);
   _request = virtRequest;
   JASSERT(tb_rc == MPI_SUCCESS)
@@ -202,7 +202,7 @@ TwoPhaseAlgo::replayTrivialBarrier()
     int tb_rc = -1;
     JUMP_TO_LOWER_HALF(lh_info.fsaddr);
     tb_rc = NEXT_FUNC(Ibarrier)(realComm, &request);
-    RETURN_TO_UPPER_HALF();
+    RETURN_TO_UPPER_HALF(__func__);
     UPDATE_REQUEST_MAP(_request, request);
     _replayTrivialBarrier = false;
   }

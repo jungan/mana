@@ -59,7 +59,7 @@
 // Returns true if we are currently replaying the MPI calls from the saved MPI
 // calls log; false, otherwise. Normally, this would be true while restoring
 // the MPI state at restart time. All other times, this would return false.
-#define LOGGING() \
+#define LOGGING_MPI() \
   dmtcp_mpi::MpiRecordReplay::instance().isReplayOn()
 
 // Calls the wrapper function corresponding to the given type 'type'. (The

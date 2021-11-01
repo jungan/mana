@@ -66,7 +66,7 @@ extern LowerHalfInfo_t lh_info;
 
 // Helper macro to be used whenever making a returning from the lower half to
 // the upper half.
-#define RETURN_TO_UPPER_HALF()                                                 \
+#define RETURN_TO_UPPER_HALF(__func__)                                                 \
   mtcp_inline_syscall(arch_prctl, 2, ARCH_SET_FS, &upperHalfFs);               \
   } while (0)
 

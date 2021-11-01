@@ -305,6 +305,6 @@ localRankToGlobalRank(int localRank, MPI_Comm localComm)
                                    worldGroup, &worldRank); 
   NEXT_FUNC(Group_free)(&worldGroup);
   NEXT_FUNC(Group_free)(&localGroup);
-  RETURN_TO_UPPER_HALF();
+  RETURN_TO_UPPER_HALF(__func__);
   return worldRank;
 }
